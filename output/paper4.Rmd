@@ -1,0 +1,450 @@
+---
+title: "Secrets Behind the Education Level in Zambia"
+subtitle: "Unbalanced education resources distribution is a obstacle in country development"
+author: 
+  - Zhiyue Yu
+  - Matthew Ma
+thanks: "Code and data are available at: https://github.com/gggeorgeeeyu/paper4."
+date: "`r format(Sys.time(), '%d %B %Y')`"
+abstract: "The educational level of the population is a strong indicator of national development. From the perspective of Zambia, which has just become a developing country from an underdeveloped country, it is of great significance to study the educational level of the general population in this region [@two].
+In this paper, we will use the information from Zambia’s 1996 Demographic and Health Survey final paper provided by DHS (Demographic and Health Survey), an official statistic program supported by the United States Agency for International Developments, to extract, clean, and to conclude all the education-related information including local educational penetration, educational attainment by gender, educational attainment by region, and educational attainment by share [@one].
+By reviewing the data, although Zambia was an undeveloped country in 1996, the overall education level is in a relatively better situation than in other undeveloped countries. The majority of the population accepted primary and secondary level education, and many people have accepted higher-level education.
+Therefore, we concluded that although the proportion of the educated population in the whole society varies greatly in some specific provinces, and there is an obvious inequality in the proportion of the educated population between the sexes, the proportion of the educated population in the whole society is still getting better year by year because of the increase of the total educated population. Lastly, we deduct that the increasing educated population gradually became an important factor that boosted the economic pattern of the whole country in the future, which ultimately indirectly made Zambia become a developing country after more than one decade."
+output:
+  bookdown::pdf_document2
+toc: FALSE
+bibliography: references.bib
+---
+
+```{r, include=FALSE}
+#remove.packages(c("pdftools", "data.table"))
+#install.packages('Rcpp', dependencies = TRUE)
+#install.packages('pdftools', dependencies = TRUE)
+#install.packages('data.table', dependencies = TRUE)
+#install.packages("tidyverse")
+#install.packages("janitor")
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(janitor)
+library(pdftools)
+library(purrr)
+library(tidyverse)
+library(stringi)
+```
+
+```{r, include=FALSE}
+#read in pdf and page 44
+paper = pdf_text("https://dhsprogram.com/pubs/pdf/FR86/FR86.pdf")
+cat(paper[44])
+
+#split the lines
+page <- stri_split_lines(paper[[44]])[[1]]
+page <- page[page != ""] #remove the empty lines
+page <- page[-56] #remove the page number line
+
+page_no_header <- page[8:length(page)] #select the data only
+str_squish(page_no_header[1]) #compress the spaces
+demographic <- tibble(all = page_no_header)#turn it into a table
+demographic <- demographic %>% #name and split the columns
+  mutate(all = str_squish(all)) %>%
+    separate(col = all,
+           into = c("background", "no_education", "primary", "secondary", "higher", "total", "number"),
+           sep = " ",
+           remove = TRUE,
+           fill = "right",
+           extra = "drop"
+  )
+```
+
+```{r, include=FALSE}
+#correct the wrong numbers
+
+a = as.numeric(demographic$no_education)
+b = as.numeric(demographic$primary)
+c = as.numeric(demographic$secondary)
+d = as.numeric(demographic$higher)
+e = as.numeric(demographic$total)
+f = as.numeric(demographic$number)
+
+a[5] <- 11.7
+b[5] <- 57.1
+c[5] <- 27.0
+d[5] <- 4.2
+d[33] <- 11.6
+e[5] <- 100.0
+e[18] <- 100.0
+e[27] <- 100.0
+e[33] <- 100.0
+f[5] <- 1286
+f[33] <- 65
+f[3] <- 2003
+f[4] <- 1830
+f[6] <- 1081
+f[11:12] <- c(3604, 4417)
+f[15:16] <- c(1588, 1075)
+f[18] <- 1403
+f[23] <- 8021
+
+#replace the new columns
+demographic$no_education <- a
+demographic$primary <- b
+demographic$secondary <- c
+demographic$higher <- d
+demographic$total <- e
+demographic$number <- f
+```
+
+
+
+
+# Introduction
+
+Education is an important indicator to determine the degree of social development. A country's level of education and its people's general level of education largely determine the development and future of a country.
+
+Generally speaking, the more developed a country is, the more outstanding its education industry is. Take the United States and The United Kingdom, for example; the land of these two recognized as the most developed countries in the world almost accounts for more than 90% of the world's top education resources [@three]. Moreover, the more developed the country, the higher the share of its population that is generally educated. In developed countries like Canada, people with bachelor's degrees make up 70% of the population [@four].
+
+On the other hand, In undeveloped countries like Zambia, Cambodia and Mumbai…the proportion of people with higher education is as low as the total number of well-educated population is even less than that in certain city in a developed country. With globalization and expanding economic volume under the global context in recent decades, the difference in social education levels has also become an essential factor that makes many backward countries struggle below the poverty line for decades. 
+
+So far, it is tough for the vast majority of underdeveloped countries to become developing countries. However, in recent years, Zambia in southern Africa has broken away from the ranks of underdeveloped countries and finally become a developing country, largely due to its people's basic education level [@two]. According to the open data provided by DHS Program (Demographic and Health Survey) founded by United States Agency for International Development, the world's largest official aid agency, we found that Zambia had a better proportion of an educated population than other backward countries as early as 26 years ago in last century [@one].
+
+From the DHS’s final report of Zambia in 1996, many critical social data, including education, marriage, childbirth, reproduction, infectious disease and mortality rate, were covered [@one]. The data was based on the sampling survey results and the sampling data extracted from the whole of Zambia in 1996. We found very detailed information on Zambia’s educational attainment stratified by region, gender and province in 1996 [@one]. 
+
+
+Although the information was precisely provided by the DHS program, since this paper was posted more than twenty years, it is still difficult for people to intuitively sum up the information about social education levels efficiently from this 300-page report. Moreover, as the information provided by DHS is a PDF version, a document more likely to be visually read than collected, it will be challenging for most people to collect and sort out data. This form of the file makes it hard to summarize education-related information.
+
+Therefore, in this research paper, we focus on collecting, extracting, and cleaning the education-related information from this report and produce a shorter, more efficient, visually readable report. In addition, the methodology of data cleaning is fundamental; therefore, we will use a more statistically efficient method to summarize and integrate the data into new tables and charts by scanning. The analysis will examine Zambia's 1996 Educational Population from the perspective of multiple variables and extend some generalizations in society. Lastly, an interpretation of how the population's education level eventually benefited it and became a developing country more than one decade later.
+
+
+# Data
+
+In the paper, we run our analysis in `R` [@citeR]. To read in pdf file, we used `pdftools` package written by [@a]. To clean data and visualize data, we used `tidyverse` package written by [@b], `ggplot2` written by [@c], `purrr` written by [@d], `janitor` written by [@e], `stringi` written by [@f].
+
+The data we used was from the Zambia DHS, 1996 - Final Report (English), which is one of the reports in the DHS Program[Demographic and Health Survey]. The DHS Program is a program that contains reports from various of countries related to demographic and Health Surveys. We converted one of the full-page tables in the report of Zambia in 1996 called "Level of education by background characteristics" into usable table. 
+In table \@ref(tab:all), we can see that it describes the distribution of respondents by their highest level of education based on their background characteristics, including their age group, region and province. The table we converted is an aggregated data set, which has shown the aggregated data for analysis. This table includes six sub-tables, dividing the respondents into women and men, it also shows the three characteristics respectively for both men and women. The variables named "No education", "Primary", "Secondary" and "Higher" correspond to the highest level education of the respondents, the data under these variables are calculated in percentage. The column "Total" checks the total percentage of the group, which should be 100 per cent. The last column "number" is the total number of respondents for each group.
+In order to graph the data for visualization and data analysis, we want to clean and transform the data set before the analysis. We first calculated the exact number of respondents for each education level in each age group, region and province, then we combine the sub-tables together to show the distribution of education levels in each category. After the data transformation, we visualize and analyze the results in the section \@ref(results).
+By doing this practice, we will be able to visualize the data, see the trend and do further analysis. By analyzing this data set, we can also see the nature of the development of an undeveloped country to developing country. We can also provide suggestions for undeveloped countries by emphasizing the importance of education and how they can increase the average highest education level.
+
+```{r all, fig.cap="Level of education by background characteristics(shown in percentage)", echo=FALSE}
+#new data set
+demographic2 = demographic
+
+#change na to null
+demographic2 <- sapply(demographic2, as.character)
+demographic2[is.na(demographic2)] <- " "
+
+#build the table
+knitr::kable(demographic2, caption = "Level of education by background characteristics(shown in percentage)")
+```
+
+
+# Results
+
+In each data set, the horizontal axis represents different levels of education, while the number axis contains three different variables: age group, region, and province, respectively. Each variable corresponds to two ICONS for gender. Different levels of education are also divided into Categorical so that readers can intuitively see the corresponding amount and proportion of different levels of education under different indicators. In addition, to present a more intuitive visual experience, we also mark different variables in color.
+
+## Age group vs. population education level
+
+From the graph of age group vs. population education level for women(Figure \@ref(fig:p1)), we classified the age group by 5 years from 15 years old to 49 years old. It is evident whether in which age group the majority are the primary education. In addition, the total number of people who have only received primary education will be relatively average regardless of the range, basically accounting for the overall population. 
+
+On the other hand, the portion of those who had experienced higher education is the minor group, which is reasonable because the well-educated group is always a relatively small proportion in most societies, especially in an undeveloped society like Zambia. Regardless of the age group from 15 to 19 years old was too young to take higher education, the most negligible proportion of that appears in 45 to 49 years old, and the highest proportion of that appears in the age group of 40-year-old to 44 years old. Moreover, it shows a gradually decreasing trend with the age group decreasing. Moreover, the portion of secondary education and no education also takes up a significant total. There is little difference between the two in total, but the only difference is that with the decrease in age, fewer and fewer people have no education, while more and more people have received secondary education. 
+
+From this graph, we can see that although the higher education portion tends to decrease, the proportion of secondary education and the no education proportion respectively rise and go down significantly. That marks the overall social fundamental education level is increasing.
+
+For the same graph in men(Figure \@ref(fig:p2)), the most dominant portion is still primary education, but the secondary education proportion shows a very fluent trend. It indicates an increasing trend with the decreasing age group from 49 to 25 years, and the peak of that was shown from the age group from 25 to 29 years old. Nevertheless, it decreases when the age decreases from 25-29 to 15-19. The two highest proportion of higher educated group appears from 40-44 and 50-54 years old and there shows no regularity of trend for that in the overall statistics. Regardless of the youngest generation, the non-educated group is the tiniest portion, and that points to the education situation for men being better than women from the perspective of age group.
+
+```{r p1, fig.cap= "Relative Proportion of Education Levels Each Age Group(Women)" ,echo=FALSE}
+#select the women age table
+women_age <- demographic %>% slice(3:9)
+
+#count all the numbers
+women_age <- mutate(women_age,
+             num_no_edu = round(no_education * number/100),
+             num_primary = round(primary * number/100),
+             num_secondary = round(secondary * number/100),
+             num_higher = round(higher * number/100)
+             )
+
+#women no education
+women_noeduage <- data.frame(age = women_age$background, gender = "female", education_level = "no education", sub_num = women_age$num_no_edu, total_number = women_age$number, share = women_age$no_education/100, stringsAsFactors = FALSE)
+
+#women primary
+women_primary <- data.frame(age = women_age$background, gender = "female", education_level = "primary", sub_num = women_age$num_primary, total_number = women_age$number, share = women_age$primary/100, stringsAsFactors = FALSE)
+
+#women secondary
+women_secondary <- data.frame(age = women_age$background, gender = "female", education_level = "secondary", sub_num = women_age$num_secondary, total_number = women_age$number, share = women_age$secondary/100, stringsAsFactors = FALSE)
+
+#women higher
+women_higher <- data.frame(age = women_age$background, gender = "female", education_level = "higher", sub_num = women_age$num_higher, total_number = women_age$number, share = women_age$higher/100, stringsAsFactors = FALSE)
+
+women_noeduage$age <- factor(women_noeduage$age, levels = women_noeduage$age[order(women_noeduage$share)])
+women_primary$age <- factor(women_primary$age, levels = women_primary$age[order(women_primary$share)])
+women_secondary$age <- factor(women_secondary$age, levels = women_secondary$age[order(women_secondary$share)])
+women_higher$age <- factor(women_higher$age, levels = women_higher$age[order(women_higher$share)])
+
+women_age.plot <- rbind(women_noeduage, women_primary, women_secondary, women_higher)
+
+#plot the graph
+women_age.plot %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = age, y = sub_num , fill = education_level), stat = "identity", position = "fill") +
+  labs(x = "Age Group",
+       y = "Relative Proportion of Different Education levels",
+       title = "Relative Proportion of Different Education Levels Each Age Group(Women)") +
+  coord_flip()
+```
+
+```{r p2, fig.cap= "Relative Proportion of Different Education Levels Each Age Group(Men)", echo=FALSE}
+#select the men age table
+men_age <- demographic %>% slice(26:34)
+
+#count all the numbers
+men_age <- mutate(men_age,
+             num_no_edu = round(no_education * number/100),
+             num_primary = round(primary * number/100),
+             num_secondary = round(secondary * number/100),
+             num_higher = round(higher * number/100)
+             )
+
+#men no education
+men_noeduage <- data.frame(age = men_age$background, gender = "male", education_level = "no education", sub_num = men_age$num_no_edu, total_number =men_age$number, share = men_age$no_education/100, stringsAsFactors = FALSE)
+
+#men primary
+men_primary <- data.frame(age = men_age$background, gender = "male", education_level = "primary", sub_num = men_age$num_primary, total_number = men_age$number, share = men_age$primary/100, stringsAsFactors = FALSE)
+
+#men secondary
+men_secondary <- data.frame(age = men_age$background, gender = "male", education_level = "secondary", sub_num = men_age$num_secondary, total_number = men_age$number, share = men_age$secondary/100, stringsAsFactors = FALSE)
+
+#men higher
+men_higher <- data.frame(age = men_age$background, gender = "male", education_level = "higher", sub_num = men_age$num_higher, total_number = men_age$number, share = men_age$higher/100, stringsAsFactors = FALSE)
+
+men_noeduage$age <- factor(men_noeduage$age, levels = men_noeduage$age[order(men_noeduage$share)])
+men_primary$age <- factor(men_primary$age, levels = men_primary$age[order(men_primary$share)])
+men_secondary$age <- factor(men_secondary$age, levels = men_secondary$age[order(men_secondary$share)])
+men_higher$age <- factor(men_higher$age, levels = men_higher$age[order(men_higher$share)])
+
+men_age.plot <- rbind(men_noeduage, men_primary, men_secondary, men_higher)
+
+#plot the graph
+men_age.plot %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = reorder(age, desc(sub_num)), y = sub_num , fill = education_level), stat = "identity", position = "fill") +
+  labs(x = "Age Group",
+       y = "Relative Proportion of Different Education levels",
+       title = "Relative Proportion of Different Education Levels Each Age Group(Men)") +
+  coord_flip()
+```
+
+## Region vs. population education level
+
+In terms of the indicator of the region, the variables on the y-axis are only rural and Urban. Both the two histograms under each variable can be considered as a box plot. Therefore, an analysis of that will be given from the perspective of the box plot.
+
+From the graph of region vs. population education level for women(Figure \@ref(fig:p3)), whether in urban or rural areas, we can find that the primary education proportion occupies the majority of the whole distribution. Rural areas present a normal distribution with primary distribution, with more on both sides and less in the middle, and almost no higher education population. However, for urban areas, the proportion of people with secondary and higher-level education has increased significantly, while those without education have decreased significantly.
+
+From the graph of region vs. population education level for men(Figure \@ref(fig:p4)), it is undeniable that the rural region has poor education level than in urban; this considerable difference is quite typical for most undeveloped countries and developing countries. For that in the rural region, regarding the graph as a box plot, it follows by a normal distribution, the vast majority are the people who take primary education, the secondary education shares the second large part, and the no education and higher education respectively take the third and the tiniest proportion. However, urban areas are different, the secondary education proportion became the most dominative part of the data, and the primary education proportion decreased. Compared with rural areas, the proportion of higher education and no education in the urban area shows an opposite trend, occupying the third and fourth place respectively, and the number of people with higher education has increased significantly. 
+
+```{r p3, fig.cap="Relative Proportion of Education Levels Each Region(Women)", echo=FALSE}
+#select the women region table
+women_region <- demographic %>% slice(11:12)
+
+#count all the numbers
+women_region <- mutate(women_region,
+             num_no_edu = round(no_education * number/100),
+             num_primary = round(primary * number/100),
+             num_secondary = round(secondary * number/100),
+             num_higher = round(higher * number/100)
+             )
+
+#women no education
+women_noeduage <- data.frame(age = women_region$background, gender = "female", education_level = "no education", sub_num = women_region$num_no_edu, total_number = women_region$number, share = women_region$no_education/100, stringsAsFactors = FALSE)
+
+#women primary
+women_primary <- data.frame(age = women_region$background, gender = "female", education_level = "primary", sub_num = women_region$num_primary, total_number = women_region$number, share = women_region$primary/100, stringsAsFactors = FALSE)
+
+#women secondary
+women_secondary <- data.frame(age = women_region$background, gender = "female", education_level = "secondary", sub_num = women_region$num_secondary, total_number = women_region$number, share = women_region$secondary/100, stringsAsFactors = FALSE)
+
+#women higher
+women_higher <- data.frame(age = women_region$background, gender = "female", education_level = "higher", sub_num = women_region$num_higher, total_number = women_region$number, share = women_region$higher/100, stringsAsFactors = FALSE)
+
+women_noeduage$age <- factor(women_noeduage$age, levels = women_noeduage$age[order(women_noeduage$share)])
+women_primary$age <- factor(women_primary$age, levels = women_primary$age[order(women_primary$share)])
+women_secondary$age <- factor(women_secondary$age, levels = women_secondary$age[order(women_secondary$share)])
+women_higher$age <- factor(women_higher$age, levels = women_higher$age[order(women_higher$share)])
+
+women_region.plot <- rbind(women_noeduage, women_primary, women_secondary, women_higher)
+
+#plot the graph
+women_region.plot %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = age, y = sub_num , fill = education_level), stat = "identity", position = "fill") +
+  labs(x = "Region",
+       y = "Relative Proportion of Different Region",
+       title = "Relative Proportion of Different Education Levels Each Region(Women)") +
+  coord_flip()
+```
+
+```{r p4, fig.cap="Relative Proportion of Different Education Levels Each Region(Men)", echo=FALSE}
+#select the men region table
+men_region <- demographic %>% slice(36:37)
+
+#count all the numbers
+men_region <- mutate(men_region,
+             num_no_edu = round(no_education * number/100),
+             num_primary = round(primary * number/100),
+             num_secondary = round(secondary * number/100),
+             num_higher = round(higher * number/100)
+             )
+
+#men no education
+men_noeduage <- data.frame(age = men_region$background, gender = "male", education_level = "no education", sub_num = men_region$num_no_edu, total_number = men_region$number, share = men_region$no_education/100, stringsAsFactors = FALSE)
+
+#men primary
+men_primary <- data.frame(age = men_region$background, gender = "male", education_level = "primary", sub_num = men_region$num_primary, total_number = men_region$number, share = men_region$primary/100, stringsAsFactors = FALSE)
+
+#men secondary
+men_secondary <- data.frame(age = men_region$background, gender = "male", education_level = "secondary", sub_num = men_region$num_secondary, total_number = men_region$number, share = men_region$secondary/100, stringsAsFactors = FALSE)
+
+#men higher
+men_higher <- data.frame(age = men_region$background, gender = "male", education_level = "higher", sub_num = men_region$num_higher, total_number = men_region$number, share = men_region$higher/100, stringsAsFactors = FALSE)
+
+men_noeduage$age <- factor(men_noeduage$age, levels = men_noeduage$age[order(men_noeduage$share)])
+men_primary$age <- factor(men_primary$age, levels = men_primary$age[order(men_primary$share)])
+men_secondary$age <- factor(men_secondary$age, levels = men_secondary$age[order(men_secondary$share)])
+men_higher$age <- factor(men_higher$age, levels = men_higher$age[order(men_higher$share)])
+
+men_region.plot <- rbind(men_noeduage, men_primary, men_secondary, men_higher)
+
+#plot the graph
+men_region.plot %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = age, y = sub_num , fill = education_level), stat = "identity", position = "fill") +
+  labs(x = "Region",
+       y = "Relative Proportion of Different Region",
+       title = "Relative Proportion of Different Education Levels Each Region(Men)") +
+  coord_flip()
+```
+
+## Province vs. population education level
+
+From the graph of province vs. population education level for women(Figure \@ref(fig:p5)), primary education still takes the biggest proportion in all the provinces. In the Central, Lusaka and Copperbelt provinces, the education ratio is relatively high, with a relatively high proportion of people receiving higher education and secondary education. Among them, the Copperbelt has the largest proportion of people receiving secondary education. Lusaka has the highest percentage of higher education. In addition, for all the other provinces, there is basically no difference between them. The number of people with higher education is very small. In many provinces, there are almost no people with higher education, even in Eastern region.
+
+There appears to be a tremendous difference between women and men on this indicator. As can be seen from the chart(Figure \@ref(fig:p6)), the most significant changes are seen in the North-Western region, where the high proportion of male education occupies the second largest proportion and is only slightly lower than the most significant proportion of primary education level. The overall status of the other regions is similar to that of women in the provinces. Central, Lusaka and Copperbelt provinces still have the highest secondary education level.
+
+```{r p5, fig.cap = "Relative Proportion of Education Levels Each Province(Women)", echo=FALSE}
+#select the women province table
+women_province <- demographic %>% slice(14:22)
+
+#count all the numbers
+women_province <- mutate(women_province,
+             num_no_edu = round(no_education * number/100),
+             num_primary = round(primary * number/100),
+             num_secondary = round(secondary * number/100),
+             num_higher = round(higher * number/100)
+             )
+
+#women no education
+women_noeduage <- data.frame(age = women_province$background, gender = "female", education_level = "no education", sub_num = women_province$num_no_edu, total_number = women_province$number, share = women_province$no_education/100, stringsAsFactors = FALSE)
+
+#women primary
+women_primary <- data.frame(age = women_province$background, gender = "female", education_level = "primary", sub_num = women_province$num_primary, total_number = women_province$number, share = women_province$primary/100, stringsAsFactors = FALSE)
+
+#women secondary
+women_secondary <- data.frame(age = women_province$background, gender = "female", education_level = "secondary", sub_num = women_province$num_secondary, total_number = women_province$number, share = women_province$secondary/100, stringsAsFactors = FALSE)
+
+#women higher
+women_higher <- data.frame(age = women_province$background, gender = "female", education_level = "higher", sub_num = women_province$num_higher, total_number = women_province$number, share = women_province$higher/100, stringsAsFactors = FALSE)
+
+women_noeduage$age <- factor(women_noeduage$age, levels = women_noeduage$age[order(women_noeduage$share)])
+women_primary$age <- factor(women_primary$age, levels = women_primary$age[order(women_primary$share)])
+women_secondary$age <- factor(women_secondary$age, levels = women_secondary$age[order(women_secondary$share)])
+women_higher$age <- factor(women_higher$age, levels = women_higher$age[order(women_higher$share)])
+
+women_province.plot <- rbind(women_noeduage, women_primary, women_secondary, women_higher)
+
+#plot the graph
+women_province.plot %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = age, y = sub_num , fill = education_level), stat = "identity", position = "fill") +
+  labs(x = "Province",
+       y = "Relative Proportion of Different Education levels",
+       title = "Relative Proportion of Different Education Levels Each Province(Women)") +
+  coord_flip()
+```
+
+```{r p6, fig.cap = "Relative Proportion of Different Education Levels Each Province(Men)", echo=FALSE}
+#select the men province table
+men_province <- demographic %>% slice(39:47)
+
+#count all the numbers
+men_province <- mutate(men_province,
+             num_no_edu = round(no_education * number/100),
+             num_primary = round(primary * number/100),
+             num_secondary = round(secondary * number/100),
+             num_higher = round(higher * number/100)
+             )
+
+#men no education
+men_noeduage <- data.frame(age = men_province$background, gender = "male", education_level = "no education", sub_num = men_province$num_no_edu, total_number = men_province$number, share = men_province$no_education/100, stringsAsFactors = FALSE)
+
+#men primary
+men_primary <- data.frame(age = men_province$background, gender = "male", education_level = "primary", sub_num = men_province$num_primary, total_number = men_province$number, share = men_province$primary/100, stringsAsFactors = FALSE)
+
+#men secondary
+men_secondary <- data.frame(age = men_province$background, gender = "male", education_level = "secondary", sub_num = men_province$num_secondary, total_number = men_province$number, share = men_province$secondary/100, stringsAsFactors = FALSE)
+
+#men higher
+men_higher <- data.frame(age = men_province$background, gender = "male", education_level = "higher", sub_num = men_province$num_higher, total_number = men_province$number, share = men_province$higher/100, stringsAsFactors = FALSE)
+
+men_noeduage$age <- factor(men_noeduage$age, levels = men_noeduage$age[order(men_noeduage$share)])
+men_primary$age <- factor(men_primary$age, levels = men_primary$age[order(men_primary$share)])
+men_secondary$age <- factor(men_secondary$age, levels = men_secondary$age[order(men_secondary$share)])
+men_higher$age <- factor(men_higher$age, levels = men_higher$age[order(men_higher$share)])
+
+men_province.plot <- rbind(men_noeduage, men_primary, men_secondary, men_higher)
+
+#plot the graph
+men_province.plot %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = age, y = sub_num , fill = education_level), stat = "identity", position = "fill") +
+  labs(x = "Province",
+       y = "Relative Proportion of Different Education levels",
+       title = "Relative Proportion of Different Education Levels Each Province(Men)") +
+  coord_flip()
+```
+
+
+
+# Discussion
+
+Based on the above results and graphs(Section \@ref(results)), we will first discuss the specific generalization of different educational proportions in Zambia society in 1996 that we learned from the survey. In addition, we will discuss how the reorganization of the data model will affect the country's future and find some shortcomings in the experiment of this group.
+
+## Research Conclusion
+
+Back to the above three variables and the six different charts for analysis:
+From the graph of age group vs. population education level, we found that the overall education situation is that men's education level is generally better than women's, and the trend for women is getting better with age decreasing. 
+We can also see that in terms of Region vs. population education level, the gender situation is the same. There is a similar normal distribution trend in rural areas centered on primary education. However, in urban, we can find that the proportion of no education decreases rapidly. The proportion of secondary education and higher education level is much higher than that of rural. 
+From the point of province vs. population education level, From the chart, we can see that of the two genders, the most significant changes are found in the North-Western region.
+There is almost no proportion of higher education for women in North Western, which probably indicates severe gender discrimination in this region, and the distribution pattern is very different from that of a backward country. No matter in which province, the number of males who have received secondary education is much higher than that of females, and the number of females who have not received education is also much higher than that of males.
+
+To sum up, in Zambia in 1996, the distribution of education levels in different regions was very unreasonable. Even though there were significantly more cities than villages, it was reasonable, but cities had absolute educational advantages over rural regions under the premise of such huge differences. In particular provinces, there is a massive gap in the education level that men and women can receive. Even though men have a better distribution of education status than women in different age groups, the extremely unbalanced ratio of men and women in education in a particular province magnifies the difference in education level between men and women.
+
+## Social Relevance
+
+From the point of view that Zambia had finally left the underdeveloped country to become a developing country after more than one decades, or from the point of view that looked ahead in 1996, the data showed that the first factor that ultimately enabled Zambia to progress was the gradual increase in educational attainment with lower age [@one].
+We see in the restructuring data that regardless of gender, people are increasingly educated, and young people are getting better and better education so that they can build their countries more effectively.
+In addition, from this set of data, we can find that even though Zambia was still an underdeveloped country at that time, the overall education level in urban areas was relatively good, especially for men. It can be seen from the data that there are very few uneducated males in urban areas, and most of them have received education above secondary level, which can promote the rapid development of cities and thus promote the development of the whole country.
+Similarly, even though there may be gender inequality in education levels in provinces like the North-Western, there are a large number of highly educated people in the region, and the aggregation of these highly educated people may be crucial to the scientific and technological development of a society.
+Therefore, the above three factors may lead Zambia eventually became a developing country after a period of development. 
+
+## Weakness and limitation
+ 
+Even if GHS provides this data set, the data collection methods more than 20 years ago may not be diverse, which may lead to the problem of insufficient samples. On the other hand, since the READ PDF file scans the file, there are still a few problems with data loss when doing data cleansing.
+
+
+\newpage
+
+
+# References
+
