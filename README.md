@@ -1,0 +1,3 @@
+In this group of documents, we collected the data related to the general education level of the population in the final report on Zambia in 1996 provided by the Demographic and Health Survey. In addition, R studio was used to make many corresponding and complicated data, systematically clean up and produce visual charts. On this basis, we analyzed the significance of Zambia’s demographical data in 1996 through the previous data collection and some extended research. Lastly, we derived some social correlation studies and conjecture based on the collated results.
+
+We adopted R Markdown to generate the entire pdf version report, and we simultaneously uploaded all relative data and code with this pdf file. Thus this Paper is fully reproducible.
